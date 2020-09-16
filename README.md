@@ -17,3 +17,10 @@ docker build . -t cadabra2
 docker run -p 8080:8080 -v $(pwd)/notebooks:/notebooks cadabra2 
 ```
 and follow the tokenized url in your browser to access.
+
+## Notebooks
+Most of the notebooks will be derived from a brilliant tutorial by [Leo Brewin](https://github.com/leo-brewin), which you can find [on ArXiv](https://arxiv.org/pdf/1912.08839.pdf).
+
+I include some of my original work without indication, however such amendments serve primarily to aid my own learning.
+
+At such time where I push a notebook of entirely independent work, I will update this readme to reflect that.
