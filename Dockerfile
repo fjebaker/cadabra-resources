@@ -1,32 +1,41 @@
-FROM debian:stretch
+# build container
+FROM debian:buster AS installer
 
-RUN apt-get -qq update && apt-get -qq -y install curl bzip2 \
-    && curl -sSL https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o /tmp/miniconda.sh \
-    && bash /tmp/miniconda.sh -bfp /usr/local \
-    && rm -rf /tmp/miniconda.sh \
-    && conda install -y python=3
+RUN apt-get -qq update && apt-get -qq -y install git cmake python3 python3-dev g++ libpcre3 libpcre3-dev libgmp3-dev libgtkmm-3.0-dev libboost-all-dev libgmp-dev
 
+# this may need to be updated after merge
+RUN git clone -b "feature/python-jupyter-kernel" --depth 1 https://github.com/kpeeters/cadabra2
 
-RUN conda config --add channels conda-forge \
-    && conda config --set channel_priority strict \
-    && conda update --all -y \
-    && conda install -y jupyter cadabra2-jupyter-kernel
+WORKDIR cadabra2
+RUN mkdir build
 
-# install missing library
-RUN apt update && apt install libsigc++-2.0-0v5
-# symlink library for cadabra2 
-RUN ln -s /usr/lib/x86_64-linux-gnu/libsigc-2.0.so.0 /usr/local/lib/libsigc-2.0.so.0
+# disable client_server build
+RUN sed -i -e 's/add_subdirectory(client_server)//g' CMakeLists.txt
+RUN cd build && cmake .. -DENABLE_MATHEMATICA=OFF -DENABLE_FRONTEND=OFF -DENABLE_PY_JUPYTER=ON
+RUN cd build && make -j $(nproc) && make install
 
-# clean container a little
-RUN apt-get -qq -y remove curl bzip2 \
-    && apt-get -qq -y autoremove \
-    && apt-get autoclean \
-    && rm -rf /var/lib/apt/lists/* /var/log/dpkg.log \
-    && conda clean --all --yes
+# ship container
+FROM python:3.7-slim-buster
+WORKDIR /
 
-# workenv
-RUN mkdir /notebooks
-WORKDIR /notebooks
+COPY --from=installer /usr/local/lib/python3.7/site-packages/cdb /usr/local/lib/python3.7/site-packages/cdb
+COPY --from=installer /usr/local/share/jupyter/kernels /usr/local/share/jupyter/kernels
+COPY --from=installer /usr/local/lib/python3.7/site-packages/cdb_appdirs.py /usr/local/lib/python3.7/site-packages/cdb_appdirs.py
+COPY --from=installer /usr/local/lib/python3.7/site-packages/cadabra2_defaults.py /usr/local/lib/python3.7/site-packages/cadabra2_defaults.py
+COPY --from=installer /usr/local/lib/python3.7/site-packages/cadabra2.so /usr/local/lib/python3.7/site-packages/cadabra2.so
+COPY --from=installer /usr/local/lib/python3.7/site-packages/cadabra2_jupyter /usr/local/lib/python3.7/site-packages/cadabra2_jupyter
+
+RUN apt-get -qq update && apt-get install -y libgmp3-dev libboost-system-dev
+
+RUN pip3.7 install jupyter
+
+# pathing issue fix
+RUN ln -s /usr/local/bin/python3.7 /usr/bin/python3.7
+
+# create running user
+RUN groupadd --gid 1001 cadabra
+RUN useradd --create-home --shell /bin/bash --uid 1001 --gid 1001 cadabra
+USER cadabra
+WORKDIR /home/cadabra
 
 CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8080", "--allow-root"]
-
