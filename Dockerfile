@@ -44,7 +44,7 @@ RUN sed -i -e "s/stream.indentation/1 == stream.column/g" /usr/local/lib/python3
 # create running user
 RUN groupadd --gid 1001 cadabra
 RUN useradd --create-home --shell /bin/bash --uid 1001 --gid 1001 cadabra
-# USER cadabra
+USER cadabra
 WORKDIR /home/cadabra
 
 CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8080", "--allow-root"]
