@@ -1,6 +1,14 @@
 # cadabra-resources
 Notes and tutorials for using Cadabra2.
 
+## Note: ⚠️ there is now an **official Cadabra2 Docker image**
+
+Kasper maintains an official Docker image in the [source tree](https://github.com/kpeeters/cadabra2/tree/master/docker). You can download it directly from Dockerhub [here](https://hub.docker.com/r/kpeeters/cadabra2-jupyter), or using the command line:
+```bash
+docker image pull kpeeters/cadabra2-jupyter
+``` 
+I will no longer be maintaining the Dockerfile in this repository.
+
 ## Setup
 Note, this is by no means a small Dockerfile for Cadabra -- but personally I do not enjoy using `conda` on my work machine, so prefer the modularity of Docker for porting the environment around.
 
